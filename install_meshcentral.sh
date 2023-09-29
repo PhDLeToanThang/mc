@@ -301,15 +301,15 @@ sudo mysql_secure_installation
 # Reload privilege tables now? [Y/n]:  Y
 # After you enter response for these questions, your MariaDB installation will be secured.
 
-#Step 7. Tạo CSDL cho MeshCentral Database
-mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
-mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
-mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
-mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
-mysql -uroot -prootpassword -e "SHOW DATABASES";
+#Step 8. Tạo CSDL cho MeshCentral Database
+sudo mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+sudo mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
+sudo mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
+sudo mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
+sudo mysql -uroot -prootpassword -e "SHOW DATABASES";
 
 # Nếu đã có thì bỏ qua đoạn hàm này như thế nào ?
-#Step 8. Next, edit the MariaDB default configuration file and define the innodb_file_format:
+#Step 9. Next, edit the MariaDB default configuration file and define the innodb_file_format:
 #nano /etc/mysql/mariadb.conf.d/50-server.cnf
 #Add the following lines inside the [mysqld] section: 
 # if new php.ini configure then clear sign sharp # comment
@@ -323,7 +323,7 @@ mysql -uroot -prootpassword -e "SHOW DATABASES";
 #Save the file then restart the MariaDB service to apply the changes.
 systemctl restart mariadb
 
-#Step 9. Download & Install MeshCentral
+#Step 10. Download & Install MeshCentral
 #We will be using Git to install/update the MC Core Application 
 git clone https://github.com/Ylianst/MeshCentral.git
 cd MeshCentral
@@ -332,7 +332,7 @@ npm install
 # Chạy MeshCentral
 node meshcentral
 
-#Step 8. Configure NGINX
+#Step 11. Configure NGINX
 
 #Next, you will need to create an Nginx virtual host configuration file to host ITIL:
 #$ nano /etc/nginx/conf.d/$FQDN.conf
@@ -363,11 +363,11 @@ echo '}'>> /etc/nginx/conf.d/$FQDN.conf
 #Save and close the file then verify the Nginx for any syntax error with the following command: 
 nginx -t
 
-#Step 10. Setup and Configure PhpMyAdmin
+#Step 12. Setup and Configure PhpMyAdmin
 sudo apt update
 sudo apt install phpmyadmin
 
-#Step 11. gỡ bỏ apache:
+#Step 13. gỡ bỏ apache:
 sudo service apache2 stop
 sudo apt-get purge apache2 apache2-utils apache2.2-bin apache2-common
 sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-common
@@ -381,7 +381,7 @@ sudo ln -s /usr/share/phpmyadmin /var/www/html/$FQDN/public/$phpmyadmin
 sudo chown -R root:root /var/lib/phpmyadmin
 sudo nginx -t
 
-#Step 12. Nâng cấp PhpmyAdmin lên version 5.2.1:
+#Step 14. Nâng cấp PhpmyAdmin lên version 5.2.1:
 sudo mv /usr/share/phpmyadmin/ /usr/share/phpmyadmin.bak
 sudo mkdir /usr/share/phpmyadmin/
 cd /usr/share/phpmyadmin/
@@ -398,7 +398,7 @@ mkdir /usr/share/phpMyAdmin/tmp   # tạo thư mục cache cho phpmyadmin
 sudo systemctl restart nginx
 systemctl restart php8.0-fpm.service
 
-#Step 13. Install Certbot
+#Step 15. Install Certbot
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d $FQDN
 
