@@ -335,30 +335,31 @@ node meshcentral
 #Step 11. Configure NGINX
 
 #Next, you will need to create an Nginx virtual host configuration file to host ITIL:
-#$ nano /etc/nginx/conf.d/$FQDN.conf
-echo 'server {'  >> /etc/nginx/conf.d/$FQDN.conf
-echo '    root '/var/www/html/${FQDN}/public';'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    index  index.php index.html index.htm;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    server_name '${FQDN}';'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    client_max_body_size 512M;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    autoindex off;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    location / {'>> /etc/nginx/conf.d/$FQDN.conf
-echo '        try_files $uri /index.php$is_args$args;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    }'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    location /dataroot/ {'>> /etc/nginx/conf.d/$FQDN.conf
-echo '      internal;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '      alias '/var/www/html/$FOLDERDATA/';'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    }'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    location ~ ^/index\.php$ {'>> /etc/nginx/conf.d/$FQDN.conf
-echo '        include snippets/fastcgi-php.conf;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '        fastcgi_pass unix:/run/php/php8.0-fpm.sock;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '        include fastcgi_params;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '    }'>> /etc/nginx/conf.d/$FQDN.conf
-echo '	location ~ ^/(doc|sql|setup)/{'>> /etc/nginx/conf.d/$FQDN.conf
-echo '		deny all;'>> /etc/nginx/conf.d/$FQDN.conf
-echo '	}'>> /etc/nginx/conf.d/$FQDN.conf
-echo '}'>> /etc/nginx/conf.d/$FQDN.conf
+#$ nano /etc/nginx/sites-available/$FQDN.conf
+echo 'server {'  >> /etc/nginx/sites-available/$FQDN.conf
+echo '    root '/var/www/html/${FQDN}/public';'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    index  index.php index.html index.htm;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    server_name '${FQDN}';'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    client_max_body_size 512M;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    autoindex off;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    location / {'>> /etc/nginx/sites-available/$FQDN.conf
+echo '        try_files $uri /index.php$is_args$args;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    location /dataroot/ {'>> /etc/nginx/sites-available/$FQDN.conf
+echo '      internal;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '      alias '/var/www/html/$FOLDERDATA/';'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    location ~ ^/index\.php$ {'>> /etc/nginx/sites-available/$FQDN.conf
+echo '        include snippets/fastcgi-php.conf;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '        fastcgi_pass unix:/run/php/php8.0-fpm.sock;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '        include fastcgi_params;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
+echo '	location ~ ^/(doc|sql|setup)/{'>> /etc/nginx/sites-available/$FQDN.conf
+echo '		deny all;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '	}'>> /etc/nginx/sites-available/$FQDN.conf
+echo '}'>> /etc/nginx/sites-available/$FQDN.conf
+
 
 #Save and close the file then verify the Nginx for any syntax error with the following command: 
 nginx -t
