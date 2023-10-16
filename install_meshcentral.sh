@@ -20,7 +20,7 @@ read -e dbtype
 echo "dbhost name: e.g: localhost"   # Tên Db host connector
 read -e dbhost
 
-GitMCversion="MeshCentral.git"
+GitMCversion="1.1.13"
 
 echo "run install? (y/n)"
 read -e run
@@ -28,18 +28,22 @@ if [ "$run" == n ] ; then
   exit
 else
 
+
+# Cập nhật hệ thống
+sudo apt update
+sudo apt upgrade -y
+
 #Step 1. Cài đặt Nginx
-sudo apt-get update
 sudo apt-get install nginx -y
 #sudo systemctl stop nginx.service 
 sudo systemctl start nginx.service 
 sudo systemctl enable nginx.service
 
 #Step 2. Cài đặt PHP 8 và các gói liên quan
-sudo apt install -y software-properties-common
-sudo add-apt-repository -y ppa:ondrej/php
+sudo apt install software-properties-common -y
+sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update
-sudo apt install -y php8.0-fpm php8.0-common php8.0-mbstring php8.0-xmlrpc php8.0-soap php8.0-gd php8.0-xml php8.0-intl php8.0-mysql php8.0-cli php8.0-mcrypt php8.0-ldap php8.0-zip php8.0-curl php8.0-bz2
+sudo apt install php8.0-fpm php8.0-common php8.0-mbstring php8.0-xmlrpc php8.0-soap php8.0-gd php8.0-xml php8.0-intl php8.0-mysql php8.0-cli php8.0-mcrypt php8.0-ldap php8.0-zip php8.0-curl php8.0-bz2 -y
 
 #Step 3. Cấu hình php.ini
 #Open PHP-FPM config file.
@@ -271,18 +275,17 @@ END
 systemctl restart php8.0-fpm.service
 
 #Step 4. Cài đặt MariaDB
-sudo apt install -y mariadb-server mariadb-client
-#Install MariaDB/MySQL
-#Run the following commands to install MariaDB database for Moode. You may also use MySQL instead.
-#Like NGINX, we will run the following commands to enable MariaDB to autostart during reboot, and also start now.
+sudo apt install mariadb-server mariadb-client -y
 sudo systemctl stop mysql.service 
 sudo systemctl start mysql.service 
 sudo systemctl enable mysql.service
 
 #Step 5. Cài đặt phpMyAdmin
-sudo apt install -y phpmyadmin
+sudo apt install phpmyadmin -y
 
-#Step 6. Cấu hình Nginx
+#Step 6. # Cấu hình Nginx để chạy MeshCentral
+sudo systemctl start nginx
+sudo systemctl enable nginx
 sudo mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
 sudo cp meshcentral/nginx.conf /etc/nginx/sites-available/default
 
@@ -301,7 +304,7 @@ sudo mysql_secure_installation
 # Reload privilege tables now? [Y/n]:  Y
 # After you enter response for these questions, your MariaDB installation will be secured.
 
-#Step 8. Tạo CSDL cho MeshCentral Database
+#Step 8. # Tạo cơ sở dữ liệu cho MeshCentral trong MySQL MariaDB
 sudo mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
 sudo mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
 sudo mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
@@ -323,52 +326,39 @@ sudo mysql -uroot -prootpassword -e "SHOW DATABASES";
 #Save the file then restart the MariaDB service to apply the changes.
 systemctl restart mariadb
 
-#Step 10. Download & Install MeshCentral
-#We will be using Git to install/update the MC Core Application 
-git clone https://github.com/Ylianst/MeshCentral.git
-cd MeshCentral
+#Step 10. Download và Cài đặt MeshCentral
+sudo mkdir /opt/$FQDN
+sudo chown $USER:$USER /opt/$FQDN
+cd /opt/$FQDN
+wget https://github.com/Ylianst/MeshCentral/archive/refs/tags/${GitMCversion}.zip
+unzip MeshCentral-${GitMCversion}.zip
 npm install
 
-# Chạy MeshCentral
-node meshcentral
+# Tạo tệp cấu hình cho MeshCentral
+cp config-sample.txt config.txt
 
-#Step 11. Configure NGINX
+# Cấu hình MeshCentral để sử dụng MySQL MariaDB
+sed -i 's/#db=meshcentral.db/db=${dbname}/' config.txt
+sed -i 's/#dbuser=meshcentral.dbuser/dbuser=${dbuser}/' config.txt
+sed -i 's/#dbpassword=meshcentral.dbpassword/dbpassword=${dbpass}/' config.txt
 
-#Next, you will need to create an Nginx virtual host configuration file to host ITIL:
-#$ nano /etc/nginx/sites-available/$FQDN.conf
+#Step 11. Cấu hình Nginx để chạy MeshCentral
 echo 'server {'  >> /etc/nginx/sites-available/$FQDN.conf
-echo '    root '/var/www/html/${FQDN}/public';'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    index  index.php index.html index.htm;'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    server_name '${FQDN}';'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    client_max_body_size 512M;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    autoindex off;'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    location / {'>> /etc/nginx/sites-available/$FQDN.conf
-echo '        try_files $uri /index.php$is_args$args;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_pass http://localhost:8080;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_http_version 1.1;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_set_header Upgrade \$http_upgrade;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_set_header Connection 'upgrade';'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_set_header Host \$host;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_cache_bypass \$http_upgrade;'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    location /dataroot/ {'>> /etc/nginx/sites-available/$FQDN.conf
-echo '      internal;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '      alias '/var/www/html/$FOLDERDATA/';'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    location ~ ^/index\.php$ {'>> /etc/nginx/sites-available/$FQDN.conf
-echo '        include snippets/fastcgi-php.conf;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '        fastcgi_pass unix:/run/php/php8.0-fpm.sock;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '        include fastcgi_params;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
-echo '	location ~ ^/(doc|sql|setup)/{'>> /etc/nginx/sites-available/$FQDN.conf
-echo '		deny all;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '	}'>> /etc/nginx/sites-available/$FQDN.conf
 echo '}'>> /etc/nginx/sites-available/$FQDN.conf
-
 
 #Save and close the file then verify the Nginx for any syntax error with the following command: 
 nginx -t
 
-#Step 12. Setup and Configure PhpMyAdmin
-sudo apt update
-sudo apt install phpmyadmin
-
-#Step 13. gỡ bỏ apache:
+#Step 12. gỡ bỏ apache:
 sudo service apache2 stop
 sudo apt-get purge apache2 apache2-utils apache2.2-bin apache2-common
 sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-common
@@ -382,25 +372,14 @@ sudo ln -s /usr/share/phpmyadmin /var/www/html/$FQDN/public/$phpmyadmin
 sudo chown -R root:root /var/lib/phpmyadmin
 sudo nginx -t
 
-#Step 14. Nâng cấp PhpmyAdmin lên version 5.2.1:
-sudo mv /usr/share/phpmyadmin/ /usr/share/phpmyadmin.bak
-sudo mkdir /usr/share/phpmyadmin/
-cd /usr/share/phpmyadmin/
-sudo wget https://files.phpmyadmin.net/phpMyAdmin/5.2.1/phpMyAdmin-5.2.1-all-languages.tar.gz
-sudo tar xzf phpMyAdmin-5.2.1-all-languages.tar.gz
-#Once extracted, list folder.
-ls
-#You should see a new folder phpMyAdmin-5.2.1-all-languages
-#We want to move the contents of this folder to /usr/share/phpmyadmin
-sudo mv phpMyAdmin-5.2.1-all-languages/* /usr/share/phpmyadmin
-ls /usr/share/phpmyadmin
-mkdir /usr/share/phpMyAdmin/tmp   # tạo thư mục cache cho phpmyadmin 
-
 sudo systemctl restart nginx
 systemctl restart php8.0-fpm.service
 
-#Step 15. Install Certbot
-sudo apt install certbot python3-certbot-nginx
+sudo ln -s /etc/nginx/sites-available/meshcentral /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+
+#Step 13. Cài đặt Certbot SSL
+sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d $FQDN
 
 # You should test your configuration at:
@@ -412,4 +391,8 @@ sudo certbot --nginx -d $FQDN
 #   version of this certificate in the future, simply run certbot again
 #   with the "certonly" option. To non-interactively renew *all* of
 #   your certificates, run "certbot renew"
+
+# Khởi động lại Nginx
+sudo systemctl restart nginx
+
 fi
