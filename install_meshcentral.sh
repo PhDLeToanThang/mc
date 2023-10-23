@@ -5,17 +5,17 @@ cd ~
 ############### Tham số cần thay đổi ở đây ###################
 echo "FQDN: e.g: demo.company.vn"   # Đổi địa chỉ web thứ nhất Website Master for Resource code - để tạo cùng 1 Source code duy nhất 
 read -e FQDN
-echo "dbname: e.g: itildata"   # Tên DBNane
+echo "dbname: e.g: mcdata"   # Tên DBNane
 read -e dbname
-echo "dbuser: e.g: userdata"   # Tên User access DB lmsatcuser
+echo "dbuser: e.g: usermcdata"   # Tên User access DB lmsatcuser
 read -e dbuser
 echo "Database Password: e.g: P@$$w0rd-1.22"
 read -s dbpass
-echo "phpmyadmin folder name: e.g: phpmyadmin"   # Đổi tên thư mục phpmyadmin khi add link symbol vào Website 
+echo "phpmyadmin folder name: e.g: mcdbadmin"   # Đổi tên thư mục phpmyadmin khi add link symbol vào Website 
 read -e phpmyadmin
-echo "ITIL Folder Data: e.g: itildata"   # Tên Thư mục Data vs Cache
+echo "MeshCentral Folder Data: e.g: mcdata"   # Tên Thư mục Data vs Cache
 read -e FOLDERDATA
-echo "dbtype name: e.g: mariadb"   # Tên kiểu Database
+echo "dbtype name: e.g: mysql"   # Tên kiểu Database
 read -e dbtype
 echo "dbhost name: e.g: localhost"   # Tên Db host connector
 read -e dbhost
@@ -30,7 +30,7 @@ else
 
 
 # Cập nhật hệ thống
-sudo apt update
+sudo apt update -y
 sudo apt upgrade -y
 
 #Step 1. Cài đặt Nginx
@@ -42,7 +42,7 @@ sudo systemctl enable nginx.service
 #Step 2. Cài đặt PHP 8 và các gói liên quan
 sudo apt install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
-sudo apt update
+sudo apt update -y
 sudo apt install php8.0-fpm php8.0-common php8.0-mbstring php8.0-xmlrpc php8.0-soap php8.0-gd php8.0-xml php8.0-intl php8.0-mysql php8.0-cli php8.0-mcrypt php8.0-ldap php8.0-zip php8.0-curl php8.0-bz2 -y
 
 #Step 3. Cấu hình php.ini
@@ -305,11 +305,11 @@ sudo mysql_secure_installation
 # After you enter response for these questions, your MariaDB installation will be secured.
 
 #Step 8. # Tạo cơ sở dữ liệu cho MeshCentral trong MySQL MariaDB
-sudo mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
-sudo mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
-sudo mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
-sudo mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
-sudo mysql -uroot -prootpassword -e "SHOW DATABASES";
+mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
+mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
+mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
+#mysql -uroot -prootpassword -e "SHOW DATABASES";
 
 # Nếu đã có thì bỏ qua đoạn hàm này như thế nào ?
 #Step 9. Next, edit the MariaDB default configuration file and define the innodb_file_format:
@@ -324,16 +324,19 @@ sudo mysql -uroot -prootpassword -e "SHOW DATABASES";
 #END
 
 #Save the file then restart the MariaDB service to apply the changes.
-systemctl restart mariadb
+#systemctl restart mariadb
 
 #Step 10. Download và Cài đặt MeshCentral
-sudo mkdir /opt/$FQDN
-sudo chown $USER:$USER /opt/$FQDN
-cd /opt/$FQDN
+sudo mkdir /var/www
+sudo mkdir /var/www/$FQDN
+sudo chown $USER:$USER /var/www/$FQDN
+cd /var/www/$FQDN
 wget https://github.com/Ylianst/MeshCentral/archive/refs/tags/${GitMCversion}.zip
-unzip MeshCentral-${GitMCversion}.zip
+unzip ${GitMCversion}.zip
+
 npm install
 
+rm ${GitMCversion}.zip
 # Tạo tệp cấu hình cho MeshCentral
 cp config-sample.txt config.txt
 
@@ -344,14 +347,21 @@ sed -i 's/#dbpassword=meshcentral.dbpassword/dbpassword=${dbpass}/' config.txt
 
 #Step 11. Cấu hình Nginx để chạy MeshCentral
 echo 'server {'  >> /etc/nginx/sites-available/$FQDN.conf
+echo 'listen 80;'  >> /etc/nginx/sites-available/$FQDN.conf
+echo '    listen [::]:80;'  >> /etc/nginx/sites-available/$FQDN.conf
 echo '    server_name '${FQDN}';'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    location / {'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    proxy_pass http://localhost:8080;'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    proxy_http_version 1.1;'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    proxy_set_header Upgrade \$http_upgrade;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_connect_timeout   60s;' >> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_read_timeout   120s;' >> /etc/nginx/sites-available/$FQDN.conf
 echo '    proxy_set_header Connection 'upgrade';'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    proxy_set_header Host \$host;'>> /etc/nginx/sites-available/$FQDN.conf
 echo '    proxy_cache_bypass \$http_upgrade;'>> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_set_header   Connection keep-alive;' >> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;' >> /etc/nginx/sites-available/$FQDN.conf
+echo '    proxy_set_header   X-Forwarded-Proto $scheme;' >> /etc/nginx/sites-available/$FQDN.conf
 echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
 echo '}'>> /etc/nginx/sites-available/$FQDN.conf
 
@@ -368,7 +378,7 @@ whereis apache2
 apache2: /etc/apache2
 sudo rm -rf /etc/apache2
 
-sudo ln -s /usr/share/phpmyadmin /var/www/html/$FQDN/public/$phpmyadmin
+sudo ln -s /usr/share/phpmyadmin /var/www/html/$FQDN/$phpmyadmin
 sudo chown -R root:root /var/lib/phpmyadmin
 sudo nginx -t
 
@@ -379,8 +389,8 @@ sudo ln -s /etc/nginx/sites-available/meshcentral /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
 
 #Step 13. Cài đặt Certbot SSL
-sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d $FQDN
+#sudo apt install certbot python3-certbot-nginx -y
+#sudo certbot --nginx -d $FQDN
 
 # You should test your configuration at:
 # https://www.ssllabs.com/ssltest/analyze.html?d=$FQDN
