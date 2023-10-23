@@ -330,7 +330,9 @@ mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
 #systemctl restart mariadb
 
 #Step 10. Download và Cài đặt MeshCentral
-cd /home/
+sudo mkdir /opt/$FQDN
+sudo chown -R $USER:$USER /opt/$FQDN
+cd /opt/$FQDN
 wget https://github.com/Ylianst/MeshCentral/archive/refs/tags/${GitMCversion}.zip
 unzip ${GitMCversion}.zip
 
@@ -338,7 +340,7 @@ sudo mkdir /var/www
 sudo mkdir /var/www/$FQDN
 sudo chown -R $USER:$USER /var/www/$FQDN
 cd /var/www/$FQDN
-cp -R /home/MeshCentral-${GitMCversion} /var/www/$FQDN
+cp -R /opt/$FQDN/MeshCentral-${GitMCversion} /var/www/$FQDN
 sudo chmod -R 755 /var/www/$FQDN
 sudo chown -R www-data:www-data /var/www/$FQDN/
 
