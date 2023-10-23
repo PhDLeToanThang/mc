@@ -340,7 +340,7 @@ sudo mkdir /var/www
 sudo mkdir /var/www/$FQDN
 sudo chown -R $USER:$USER /var/www/$FQDN
 cd /var/www/$FQDN
-cp -R /opt/$FQDN/MeshCentral-${GitMCversion} /var/www/$FQDN
+cp -r /opt/$FQDN/MeshCentral-${GitMCversion} /var/www/$FQDN/
 sudo chmod -R 755 /var/www/$FQDN
 sudo chown -R www-data:www-data /var/www/$FQDN/
 
@@ -409,7 +409,7 @@ sudo rm -rf /etc/apache2
 sudo rm -rf /usr/share/apache2
 sudo rm -rf /usr/share/man/man8/apache2.8.gz
 
-sudo ln -s /usr/share/phpmyadmin /var/www/html/$FQDN/$phpmyadmin
+sudo ln -s /usr/share/phpmyadmin /var/www/$FQDN/$phpmyadmin
 sudo chown -R root:root /var/lib/phpmyadmin
 sudo nginx -t
 
