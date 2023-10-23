@@ -286,8 +286,11 @@ sudo apt install phpmyadmin -y
 #Step 6. # Cấu hình Nginx để chạy MeshCentral
 sudo systemctl start nginx
 sudo systemctl enable nginx
-sudo mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
-sudo cp meshcentral/nginx.conf /etc/nginx/sites-available/default
+
+# xoa cau hinh nginx site default
+sudo rm -rf /etc/nginx/sites-available/default
+sudo rm -rf /etc/nginx/sites-enabled/default
+sudo rm -rf /etc/nginx/conf.d/$FQDN.conf
 
 #Step 7. Cấu hình MariaDB
 #Run the following command to secure MariaDB installation.
@@ -368,15 +371,23 @@ echo '}'>> /etc/nginx/sites-available/$FQDN.conf
 #Save and close the file then verify the Nginx for any syntax error with the following command: 
 nginx -t
 
+#Enable the configuration by creating a symlink to sites-enabled directory. 
+sudo ln -s /etc/nginx/sites-available/$FQDN.conf /etc/nginx/sites-enabled/$FQDN.conf
+
 #Step 12. gỡ bỏ apache:
 sudo service apache2 stop
-sudo apt-get purge apache2 apache2-utils apache2.2-bin apache2-common
-sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-common
+sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-bin apache2-common apache2.2-common -y
 
 sudo apt-get autoremove
 whereis apache2
 apache2: /etc/apache2
 sudo rm -rf /etc/apache2
+sudo rm -rf /etc/apache2
+sudo rm -rf /usr/sbin/apache2 
+sudo rm -rf /usr/lib/apache2
+sudo rm -rf /etc/apache2
+sudo rm -rf /usr/share/apache2
+sudo rm -rf /usr/share/man/man8/apache2.8.gz
 
 sudo ln -s /usr/share/phpmyadmin /var/www/html/$FQDN/$phpmyadmin
 sudo chown -R root:root /var/lib/phpmyadmin
