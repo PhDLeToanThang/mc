@@ -330,14 +330,32 @@ mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
 #systemctl restart mariadb
 
 #Step 10. Download và Cài đặt MeshCentral
-sudo mkdir /var/www
-sudo mkdir /var/www/$FQDN
-sudo chown $USER:$USER /var/www/$FQDN
-cd /var/www/$FQDN
+cd /home/
 wget https://github.com/Ylianst/MeshCentral/archive/refs/tags/${GitMCversion}.zip
 unzip ${GitMCversion}.zip
 
+sudo mkdir /var/www
+sudo mkdir /var/www/$FQDN
+sudo chown -R $USER:$USER /var/www/$FQDN
+cd /var/www/$FQDN
+cp -R /home/MeshCentral-${GitMCversion} /var/www/$FQDN
+sudo chmod -R 755 /var/www/$FQDN
+sudo chown -R www-data:www-data /var/www/$FQDN/
+
 npm install
+
+#Step 11: Finish MeshCentral installation
+cat > /etc/hosts <<END
+127.0.0.1 $FQDN
+127.0.0.1 localhost
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+END
 
 rm ${GitMCversion}.zip
 # Tạo tệp cấu hình cho MeshCentral
@@ -348,7 +366,7 @@ sed -i 's/#db=meshcentral.db/db=${dbname}/' config.txt
 sed -i 's/#dbuser=meshcentral.dbuser/dbuser=${dbuser}/' config.txt
 sed -i 's/#dbpassword=meshcentral.dbpassword/dbpassword=${dbpass}/' config.txt
 
-#Step 11. Cấu hình Nginx để chạy MeshCentral
+#Step 12. Cấu hình Nginx để chạy MeshCentral
 echo 'server {'  >> /etc/nginx/sites-available/$FQDN.conf
 echo 'listen 80;'  >> /etc/nginx/sites-available/$FQDN.conf
 echo '    listen [::]:80;'  >> /etc/nginx/sites-available/$FQDN.conf
@@ -374,7 +392,7 @@ nginx -t
 #Enable the configuration by creating a symlink to sites-enabled directory. 
 sudo ln -s /etc/nginx/sites-available/$FQDN.conf /etc/nginx/sites-enabled/$FQDN.conf
 
-#Step 12. gỡ bỏ apache:
+#Step 13. gỡ bỏ apache:
 sudo service apache2 stop
 sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-bin apache2-common apache2.2-common -y
 
@@ -399,7 +417,7 @@ systemctl restart php8.0-fpm.service
 sudo ln -s /etc/nginx/sites-available/meshcentral /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
 
-#Step 13. Cài đặt Certbot SSL
+#Step 14. Cài đặt Certbot SSL
 #sudo apt install certbot python3-certbot-nginx -y
 #sudo certbot --nginx -d $FQDN
 
