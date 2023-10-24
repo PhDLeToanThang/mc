@@ -60,12 +60,9 @@ sudo apt install phpmyadmin -y
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# xoa cau hinh nginx site default
-#sudo rm -rf /etc/nginx/conf.d/$FQDN.conf
-
-#Step 7. Cấu hình MariaDB
+#Step 6. Cấu hình MariaDB
 #Run the following command to secure MariaDB installation.
-sudo mysql_secure_installation
+#sudo mysql_secure_installation
 
 #You will see the following prompts asking to allow/disallow different type of logins. Enter Y as shown.
 # Enter current password for root (enter for none): Just press the Enter
@@ -78,7 +75,7 @@ sudo mysql_secure_installation
 # Reload privilege tables now? [Y/n]:  Y
 # After you enter response for these questions, your MariaDB installation will be secured.
 
-#Step 8. # Tạo cơ sở dữ liệu cho MeshCentral trong MySQL MariaDB
+#Step 7. # Tạo cơ sở dữ liệu cho MeshCentral trong MySQL MariaDB
 mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
 mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
 mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
@@ -88,7 +85,7 @@ mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
 #Save the file then restart the MariaDB service to apply the changes.
 #systemctl restart mariadb
 
-#Step 10. Download và Cài đặt MeshCentral
+#Step 8. Download và Cài đặt MeshCentral
 wget https://github.com/Ylianst/MeshCentral/archive/refs/tags/${GitMCversion}.zip
 
 sudo mkdir /var/www
@@ -102,18 +99,18 @@ sudo chown -R www-data:www-data /var/www/$FQDN/
 
 apt install npm -y
 
-#Step 11: Finish MeshCentral installation
-#cat > /etc/hosts <<END
-#127.0.0.1 $FQDN
-#127.0.0.1 localhost
+#Step 9: Finish MeshCentral installation
+cat > /etc/hosts <<END
+127.0.0.1 $FQDN
+127.0.0.1 localhost
 
 # The following lines are desirable for IPv6 capable hosts
-#::1     ip6-localhost ip6-loopback
-#fe00::0 ip6-localnet
-#ff00::0 ip6-mcastprefix
-#ff02::1 ip6-allnodes
-#ff02::2 ip6-allrouters
-#END
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+END
 
 rm ${GitMCversion}.zip
 # Tạo tệp cấu hình cho MeshCentral
@@ -124,7 +121,7 @@ sed -i 's/#db=meshcentral.db/db=${dbname}/' config.txt
 sed -i 's/#dbuser=meshcentral.dbuser/dbuser=${dbuser}/' config.txt
 sed -i 's/#dbpassword=meshcentral.dbpassword/dbpassword=${dbpass}/' config.txt
 
-#Step 12. Cấu hình Nginx để chạy MeshCentral
+#Step 11. Cấu hình Nginx để chạy MeshCentral
 echo 'server {'  >> /etc/nginx/sites-available/$FQDN.conf
 echo 'listen 80;'  >> /etc/nginx/sites-available/$FQDN.conf
 echo '    listen [::]:80;'  >> /etc/nginx/sites-available/$FQDN.conf
@@ -147,20 +144,20 @@ echo '}'>> /etc/nginx/sites-available/$FQDN.conf
 #Save and close the file then verify the Nginx for any syntax error with the following command: 
 nginx -t
 
-#Step 13. gỡ bỏ apache:
+#Step 12. gỡ bỏ apache:
 sudo service apache2 stop
 sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-bin apache2-common apache2.2-common -y
 
-sudo apt-get autoremove
+sudo apt-get autoremove -y
 whereis apache2
-apache2: /etc/apache2
-sudo rm -rf /etc/apache2
-sudo rm -rf /etc/apache2
-sudo rm -rf /usr/sbin/apache2 
-sudo rm -rf /usr/lib/apache2
-sudo rm -rf /etc/apache2
-sudo rm -rf /usr/share/apache2
-sudo rm -rf /usr/share/man/man8/apache2.8.gz
+apache2: /etc/apache2 -y
+sudo rm -rf /etc/apache2 -y
+sudo rm -rf /etc/apache2 -y
+sudo rm -rf /usr/sbin/apache2 -y
+sudo rm -rf /usr/lib/apache2 -y
+sudo rm -rf /etc/apache2 -y
+sudo rm -rf /usr/share/apache2 -y
+sudo rm -rf /usr/share/man/man8/apache2.8.gz -y
 
 sudo ln -s /usr/share/phpmyadmin /var/www/$FQDN/$phpmyadmin
 sudo chown -R root:root /var/lib/phpmyadmin
@@ -173,7 +170,7 @@ systemctl restart php8.0-fpm.service
 sudo ln -s /etc/nginx/sites-available/$FQDN.conf /etc/nginx/sites-enabled/$FQDN.conf
 sudo systemctl restart nginx
 
-#Step 14. Cài đặt Certbot SSL
+#Step 13. Cài đặt Certbot SSL
 #sudo apt install certbot python3-certbot-nginx -y
 #sudo certbot --nginx -d $FQDN
 
