@@ -288,8 +288,6 @@ sudo systemctl start nginx
 sudo systemctl enable nginx
 
 # xoa cau hinh nginx site default
-sudo rm -rf /etc/nginx/sites-available/default
-sudo rm -rf /etc/nginx/sites-enabled/default
 sudo rm -rf /etc/nginx/conf.d/$FQDN.conf
 
 #Step 7. Cấu hình MariaDB
@@ -391,9 +389,6 @@ echo '}'>> /etc/nginx/sites-available/$FQDN.conf
 #Save and close the file then verify the Nginx for any syntax error with the following command: 
 nginx -t
 
-#Enable the configuration by creating a symlink to sites-enabled directory. 
-sudo ln -s /etc/nginx/sites-available/$FQDN.conf /etc/nginx/sites-enabled/$FQDN.conf
-
 #Step 13. gỡ bỏ apache:
 sudo service apache2 stop
 sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-bin apache2-common apache2.2-common -y
@@ -416,7 +411,8 @@ sudo nginx -t
 sudo systemctl restart nginx
 systemctl restart php8.0-fpm.service
 
-sudo ln -s /etc/nginx/sites-available/meshcentral /etc/nginx/sites-enabled/
+#Enable the configuration by creating a symlink to sites-enabled directory. 
+sudo ln -s /etc/nginx/sites-available/$FQDN.conf /etc/nginx/sites-enabled/$FQDN.conf
 sudo systemctl restart nginx
 
 #Step 14. Cài đặt Certbot SSL
