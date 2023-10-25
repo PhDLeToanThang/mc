@@ -149,11 +149,12 @@ echo '}' >> /opt/$FQDN/meshcentral-data/config.json
 # Now we are going to change ownership of the /opt/meshcentral directory and make it read only:
 
 sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
-sudo chmod 755 –R /opt/$FQDN/meshcentral-*
+
 # MeshCentral allows users to upload and download files stored on the server. These are all stored in the meshcentral-files directory. 
 # Since we still want this to work, we need to adjust the permissions on this directory to allow the server to write to it:
-
+sudo mkdir /opt/$FQDN/meshcentral-files
 sudo chmod 755 –R /opt/$FQDN/meshcentral-files
+sudo chmod 755 –R /opt/$FQDN/meshcentral-*
 
 #If you will be using the built in Let's Encrypt support for your MeshCentral instance, we will also need to adjust permissions on the #letsencrypt directory to allow those periodic updates to work properly:
 
