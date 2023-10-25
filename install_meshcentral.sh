@@ -199,7 +199,6 @@ echo '      "_userNameIsEmail": true' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    }' >> /opt/$FQDN/meshcentral-data/config.json
 echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
 echo '  "_letsencrypt": {' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "__comment__": "Requires NodeJS 8.x or better, Go to https://letsdebug.net/ first before trying Let's Encrypt.",' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "email": "myemail@mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "names": "myserver.mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "skipChallengeVerification": true,' >> /opt/$FQDN/meshcentral-data/config.json
