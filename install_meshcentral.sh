@@ -17,7 +17,7 @@ read -e mcadmin
 echo "Group MeshCentral Admin name: e.g: mcgroup"   # Tên Thư mục Data vs Cache
 read -e mcgroup
 echo "Address Ethernet LAN IPv4 local for connect mongodb: e.g: 192.168.100.27"  # IPv4 of MONGODB Server allow connect to MESHCENTRAL
-read -e ipv4
+read -e etherip4
 
 GitMCversion="1.1.13"
 #===================================================================
@@ -64,7 +64,8 @@ sudo apt install nano -y
 sudo apt install mongodb -y
 sudo systemctl start mongodb
 sudo systemctl enable mongodb
-mongo --host 127.0.0.1:27017
+
+#mongo --host 127.0.0.1:27017
 
 # Then exit the Mongo shell by pressing CTRL-C.
 # The database and log files will be created in these locations. This info is useful for making backups of the database.
@@ -128,6 +129,7 @@ sudo systemctl start $FQDN.service
 
 #The majority of the configuration options for MeshCentral are stored in a file called config.json, stored in the ~/meshcentral-data #directory. We will edit it now to start using MongoDB. We start by opening the file in a text editor: 
 #Inside the text editor, we need to make the top section of the file look like this:
+
 echo '{' >> /opt/$FQDN/meshcentral-data/config.json
 echo '	"settings": {' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "MongoDb": "mongodb://127.0.0.1:27017/meshcentral",' >> /opt/$FQDN/meshcentral-data/config.json
@@ -138,7 +140,7 @@ echo '    "_AllowLoginToken": true,' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "_AllowFraming": true,' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "_WebRTC": false,' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "_ClickOnce": false,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_UserAllowedIP" : "127.0.0.1,::1,'${ipv4}'"' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "_UserAllowedIP" : "127.0.0.1,::1,'${etherip4}'"' >> /opt/$FQDN/meshcentral-data/config.json
 echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
 echo '}' >> /opt/$FQDN/meshcentral-data/config.json
 
