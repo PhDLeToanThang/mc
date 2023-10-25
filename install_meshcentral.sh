@@ -11,16 +11,13 @@ echo "dbuser: e.g: usermcdata"   # Tên User access DB lmsatcuser
 read -e dbuser
 echo "Database Password: e.g: P@$$w0rd-1.22"
 read -s dbpass
-echo "phpmyadmin folder name: e.g: mcdbadmin"   # Đổi tên thư mục phpmyadmin khi add link symbol vào Website 
-read -e phpmyadmin
-echo "MeshCentral Folder Data: e.g: mcdata"   # Tên Thư mục Data vs Cache
-read -e FOLDERDATA
-echo "dbtype name: e.g: mysql"   # Tên kiểu Database
-read -e dbtype
-echo "dbhost name: e.g: localhost"   # Tên Db host connector
-read -e dbhost
+echo "User MeshCentral Admin name: e.g: mcadmin"   # Đổi tên thư mục phpmyadmin khi add link symbol vào Website 
+read -e mcadmin
+echo "Group MeshCentral Admin name: e.g: mcgroup"   # Tên Thư mục Data vs Cache
+read -e mcgroup
 
 GitMCversion="1.1.13"
+#===================================================================
 
 echo "run install? (y/n)"
 read -e run
@@ -28,163 +25,94 @@ if [ "$run" == n ] ; then
   exit
 else
 
+#================= Step by step Install MESHCENTRAL SERVER ==============
+# The manual installation process is recommended for larger instances, or for administrators more familiar with installing and managing a #web server. No matter the OS of the host server, the general process is essentially the same:
+#
+# 1.   Install Nodejs and NPM
+# 2.    Create a directory for MeshCentral to run from
+# 3.    If it is to be a public-facing (WAN mode) server, verify you have public DNS record and IP Address assigned properly
+# 4.    (optional) Install and configure MongoDB
+# 5.    Install MeshCentral using NPM
+# 6.    Adjust default configuration of MeshCentral
+# 7.    Run MeshCentral
+# 8.    Open required ports in the firewall
+#===============================================================================
 
-# Cập nhật hệ thống
+#Installing NodeJS
+#The first prerequisite is to ensure NodeJS is installed on the system. We will install the node version manager, activate it, then install #an LTS version of NodeJS.
+
+sudo add-apt-repository universe -y
 sudo apt update -y
-sudo apt upgrade -y
+sudo apt install npm -y
+sudo apt install nano -y
 
-#Step 1. Cài đặt Nginx
-sudo apt-get install nginx -y
-#sudo systemctl stop nginx.service 
-sudo systemctl start nginx.service 
-sudo systemctl enable nginx.service
+#Now we install nvm (Node Version Manager) - nvm makes keeping NodeJS up to date very simple. It also allows you to run multiple versions #of Nodejs side by side, or to roll back in case there are issues with a new version. If you are installing MeshCentral on Ubuntu 18.04, #the version of NodeJS included is very out of date, and does not meet the minimum requirements for MeshCentral. So getting nvm going first #will avoid a lot of headaches in the future. 
 
-#Step 2. Cài đặt PHP 8 và các gói liên quan
-sudo apt install software-properties-common -y
-sudo add-apt-repository ppa:ondrej/php -y
-sudo apt update -y
-sudo apt install php8.0-fpm php8.0-common php8.0-mbstring php8.0-xmlrpc php8.0-soap php8.0-gd php8.0-xml php8.0-intl php8.0-mysql php8.0-cli php8.0-mcrypt php8.0-ldap php8.0-zip php8.0-curl php8.0-bz2 -y
+#wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+#You can either close out of your session, then reconnect to start using nvm, or if you are in a hurry, run the commands below to add nvm #to the system path, and add nvm to bash completion: 
+#export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+# and now to manually load nvm: 
 
-systemctl restart php8.0-fpm.service
+#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-#Step 3. Cài đặt MariaDB
-sudo apt install mariadb-server mariadb-client -y
-sudo systemctl stop mysql.service 
-sudo systemctl start mysql.service 
-sudo systemctl enable mysql.service
+# Let's take a look and see what versions of Nodejs are currently available via nvm: 
+#nvm ls-remote
 
-#Step 4. Cài đặt phpMyAdmin
-sudo apt install phpmyadmin -y
+node -v
+npm -v
+whereis node
+#node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
 
-#Step 5. # Cấu hình Nginx để chạy MeshCentral
-sudo systemctl start nginx
-sudo systemctl enable nginx
+# In this case, the result shows NodeJS binaries are found at /usr/bin/node. We will this path in the next command, which will allow NodeJS #to utilize ports below 1024. Note that these permissions may sometimes be lost when updating the Linux Kernel and the command may need to #be run again. 1)
 
-#Step 6. Cấu hình MariaDB
-#Run the following command to secure MariaDB installation.
-#sudo mysql_secure_installation
+sudo setcap cap_net_bind_service=+ep /usr/bin/node
 
-#You will see the following prompts asking to allow/disallow different type of logins. Enter Y as shown.
-# Enter current password for root (enter for none): Just press the Enter
-# Set root password? [Y/n]: Y
-# New password: Enter password
-# Re-enter new password: Repeat password
-# Remove anonymous users? [Y/n]: Y
-# Disallow root login remotely? [Y/n]: N
-# Remove test database and access to it? [Y/n]:  Y
-# Reload privilege tables now? [Y/n]:  Y
-# After you enter response for these questions, your MariaDB installation will be secured.
+sudo mkdir /opt/$FQDN
+cd /opt/$FQDN
+sudo npm install meshcentral
+sudo -u $mcadmin node ./node_modules/meshcentral
 
-#Step 7. # Tạo cơ sở dữ liệu cho MeshCentral trong MySQL MariaDB
-mysql -uroot -prootpassword -e "CREATE DATABASE $dbname CHARACTER SET utf8 COLLATE utf8_unicode_ci";
-mysql -uroot -prootpassword -e "CREATE USER '$dbuser'@'$dbhost' IDENTIFIED BY '$dbpass'";
-mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'$dbhost'";
-mysql -uroot -prootpassword -e "FLUSH PRIVILEGES";
-#mysql -uroot -prootpassword -e "SHOW DATABASES";
+#Automatically Starting the Server
+# whereis node
+#  Node is usually installed at /usr/bin/node but if your check above shows a different path, make note of it and enter it into the appropriate place in the file we are about to create.
+# We will need all of this information to create the description file for the $FQDN service we create. To create this description file, enter: 
 
-#Save the file then restart the MariaDB service to apply the changes.
-#systemctl restart mariadb
+echo '[Unit]' >>  /etc/systemd/system/$FQDN.service
+echo 'Description='${FQDN}' Server' >> /etc/systemd/system/$FQDN.service
+echo '[Service]'  >>  /etc/systemd/system/$FQDN.service
+echo 'Type=simple'  >>  /etc/systemd/system/$FQDN.service
+echo 'LimitNOFILE=1000000'  >>  /etc/systemd/system/$FQDN.service
+echo 'ExecStart=/usr/bin/node /opt/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
+echo 'WorkingDirectory=/opt/'${FQDN}''  >>  /etc/systemd/system/$FQDN.service
+echo 'Environment=NODE_ENV=production'  >>  /etc/systemd/system/$FQDN.service
+echo 'User='${mcadmin}''  >>  /etc/systemd/system/$FQDN.service
+echo 'Group='${mcgroup}''  >>  /etc/systemd/system/$FQDN.service
+echo 'Restart=always'  >>  /etc/systemd/system/$FQDN.service
+echo '# Restart service after 10 seconds if node service crashes' >>  /etc/systemd/system/$FQDN.service
+echo 'RestartSec=10'  >>  /etc/systemd/system/$FQDN.service
+echo '# Set port permissions capability'  >>  /etc/systemd/system/$FQDN.service
+echo 'AmbientCapabilities=cap_net_bind_service'  >>  /etc/systemd/system/$FQDN.service
+echo '[Install]'  >>  /etc/systemd/system/$FQDN.service
+echo 'WantedBy=multi-user.target'  >>  /etc/systemd/system/$FQDN.service
 
-#Step 8. Download và Cài đặt MeshCentral
-wget https://github.com/Ylianst/MeshCentral/archive/refs/tags/${GitMCversion}.zip
 
-sudo mkdir /var/www
-unzip ${GitMCversion}.zip -d /var/www/
-mv /var/www/MeshCentral-${GitMCversion}/ /var/www/$FQDN
+#Be sure to double check the path to NodeJS in the ExecStart line.
+#Once we have this file created we can now enable, start, stop and disable MeshCentral:
+sudo systemctl disable meshcentral.service
+sudo systemctl enable meshcentral.service
+sudo systemctl stop meshcentral.service
+sudo systemctl start meshcentral.service
 
-sudo chown -R $USER:$USER /var/www/$FQDN
-cd /var/www/$FQDN
-sudo chmod -R 755 /var/www/$FQDN
-sudo chown -R www-data:www-data /var/www/$FQDN/
 
-apt install npm -y
+#Updating MeshCentral
+#As mentioned, with this improved security installation, the automated updates and updates initiated from the web portal will fail. To #update MeshCentral, you will need to log into the server over SSH and run the following commands:
 
-#Step 9: Finish MeshCentral installation
-cat > /etc/hosts <<END
-127.0.0.1 $FQDN
-127.0.0.1 localhost
-
-# The following lines are desirable for IPv6 capable hosts
-::1     ip6-localhost ip6-loopback
-fe00::0 ip6-localnet
-ff00::0 ip6-mcastprefix
-ff02::1 ip6-allnodes
-ff02::2 ip6-allrouters
-END
-
-rm ${GitMCversion}.zip
-# Tạo tệp cấu hình cho MeshCentral
-cp config-sample.txt config.txt
-
-# Cấu hình MeshCentral để sử dụng MySQL MariaDB
-sed -i 's/#db=meshcentral.db/db=${dbname}/' config.txt
-sed -i 's/#dbuser=meshcentral.dbuser/dbuser=${dbuser}/' config.txt
-sed -i 's/#dbpassword=meshcentral.dbpassword/dbpassword=${dbpass}/' config.txt
-
-#Step 11. Cấu hình Nginx để chạy MeshCentral
-echo 'server {'  >> /etc/nginx/sites-available/$FQDN.conf
-echo 'listen 80;'  >> /etc/nginx/sites-available/$FQDN.conf
-echo '    listen [::]:80;'  >> /etc/nginx/sites-available/$FQDN.conf
-echo '    server_name '${FQDN}';'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    location / {'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_pass http://localhost:8080;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_http_version 1.1;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_set_header Upgrade \$http_upgrade;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_connect_timeout   60s;' >> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_read_timeout   120s;' >> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_set_header Connection 'upgrade';'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_set_header Host \$host;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_cache_bypass \$http_upgrade;'>> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_set_header   Connection keep-alive;' >> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;' >> /etc/nginx/sites-available/$FQDN.conf
-echo '    proxy_set_header   X-Forwarded-Proto $scheme;' >> /etc/nginx/sites-available/$FQDN.conf
-echo '    }'>> /etc/nginx/sites-available/$FQDN.conf
-echo '}'>> /etc/nginx/sites-available/$FQDN.conf
-
-#Save and close the file then verify the Nginx for any syntax error with the following command: 
-nginx -t
-
-#Step 12. gỡ bỏ apache:
-sudo service apache2 stop
-sudo apt-get purge apache2 apache2-utils apache2-bin apache2.2-bin apache2-common apache2.2-common -y
-
-sudo apt-get autoremove -y
-whereis apache2
-apache2: /etc/apache2 -y
-sudo rm -rf /etc/apache2 -y
-sudo rm -rf /etc/apache2 -y
-sudo rm -rf /usr/sbin/apache2 -y
-sudo rm -rf /usr/lib/apache2 -y
-sudo rm -rf /etc/apache2 -y
-sudo rm -rf /usr/share/apache2 -y
-sudo rm -rf /usr/share/man/man8/apache2.8.gz -y
-
-sudo ln -s /usr/share/phpmyadmin /var/www/$FQDN/$phpmyadmin
-sudo chown -R root:root /var/lib/phpmyadmin
-sudo nginx -t
-
-sudo systemctl restart nginx
-systemctl restart php8.0-fpm.service
-
-#Enable the configuration by creating a symlink to sites-enabled directory. 
-sudo ln -s /etc/nginx/sites-available/$FQDN.conf /etc/nginx/sites-enabled/$FQDN.conf
-sudo systemctl restart nginx
-
-#Step 13. Cài đặt Certbot SSL
-#sudo apt install certbot python3-certbot-nginx -y
-#sudo certbot --nginx -d $FQDN
-
-# You should test your configuration at:
-# https://www.ssllabs.com/ssltest/analyze.html?d=$FQDN
-#/etc/letsencrypt/live/$FQDN/fullchain.pem
-#   Your key file has been saved at:
-#   /etc/letsencrypt/live/$FQDN/privkey.pem
-#   Your cert will expire on yyyy-mm-dd. To obtain a new or tweaked
-#   version of this certificate in the future, simply run certbot again
-#   with the "certonly" option. To non-interactively renew *all* of
-#   your certificates, run "certbot renew"
-
-# Khởi động lại Nginx
-sudo systemctl restart nginx
+cd /opt/meshcentral
+sudo systemctl stop meshcentral
+sudo npm install meshcentral
+sudo -u $mcadmin node ./node_modules/meshcentral
+sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
+sudo chmod 755 -R /opt/$FQDN/meshcentral-files
+sudo systemctl start meshcentral
 
 fi
