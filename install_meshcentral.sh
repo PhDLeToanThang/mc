@@ -64,14 +64,25 @@ nvm install v18.18.2
 # Since nvm allows for multiple versions of Nodejs to be installed side by side, we are going to go ahead and tell it to use the version we just installed as the default: 
 nvm alias default v18.18.2
 
+#nvm use default
+#Now using node v18.18.2 (npm v10.2.1)
+
 #Now we will update npm
 npm install npm@latest -g
+nvm install node
+#v21.1.0 is already installed.
+#Now using node v21.1.0 (npm v10.2.0)
 
-nodejs -v
-#v10.19.0
+nvm use node
+# Now using node v21.1.0 (npm v10.2.0)
+node -v
+# v21.1.0
+
 npm -v
-#10.2.1
+#10.2.0
+
 whereis node
+# node: /root/.nvm/versions/node/v21.1.0/bin/node
 # node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
 
 sudo setcap cap_net_bind_service=+ep /usr/bin/node
@@ -132,7 +143,27 @@ sudo systemctl enable $FQDN.service
 sudo systemctl stop $FQDN.service
 sudo systemctl start $FQDN.service
 
-# Bước 7 (tuỳ chọn: dùng cài MONGODB làm Server nhúng CSDL quản lý MESHCENTRAL Address Book)
+
+# Bước 7 Locking Things Down
+# Now we are going to change ownership of the /opt/meshcentral directory and make it read only:
+
+sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
+
+# MeshCentral allows users to upload and download files stored on the server. These are all stored in the meshcentral-files directory. 
+# Since we still want this to work, we need to adjust the permissions on this directory to allow the server to write to it:
+sudo mkdir /opt/$FQDN/meshcentral-files
+sudo chmod 755 –R /opt/$FQDN/meshcentral-files
+sudo chmod 755 –R /opt/$FQDN/meshcentral-*
+
+#If you will be using the built in Let's Encrypt support for your MeshCentral instance, we will also need to adjust permissions on the #letsencrypt directory to allow those periodic updates to work properly:
+
+sudo mkdir /opt/$FQDN/meshcentral-data
+sudo mkdir /opt/$FQDN/meshcentral-data/letsencrypt
+sudo chmod 755 –R /opt/$FQDN/meshcentral-data/letsencrypt
+
+
+
+# Bước 8 (tuỳ chọn: dùng cài MONGODB làm Server nhúng CSDL quản lý MESHCENTRAL Address Book)
 # By default, MeshCentral uses NeDB with a database file stored at ~/meshcentral-data/meshcentral.db. While this is great for small servers #managing up to around 100 systems, as we indicated earlier, this directory will become read-only in our improved security configuration, #so now it is time to tell MeshCentral to use MongoDB instead.
 
 #The majority of the configuration options for MeshCentral are stored in a file called config.json, stored in the ~/meshcentral-data #directory. We will edit it now to start using MongoDB. We start by opening the file in a text editor: 
@@ -152,23 +183,6 @@ echo '    "_UserAllowedIP" : "127.0.0.1,::1,'${etherip4}'"' >> /opt/$FQDN/meshce
 echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
 echo '}' >> /opt/$FQDN/meshcentral-data/config.json
 
-
-# Bước 8 Locking Things Down
-# Now we are going to change ownership of the /opt/meshcentral directory and make it read only:
-
-sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
-
-# MeshCentral allows users to upload and download files stored on the server. These are all stored in the meshcentral-files directory. 
-# Since we still want this to work, we need to adjust the permissions on this directory to allow the server to write to it:
-sudo mkdir /opt/$FQDN/meshcentral-files
-sudo chmod 755 –R /opt/$FQDN/meshcentral-files
-sudo chmod 755 –R /opt/$FQDN/meshcentral-*
-
-#If you will be using the built in Let's Encrypt support for your MeshCentral instance, we will also need to adjust permissions on the #letsencrypt directory to allow those periodic updates to work properly:
-
-sudo mkdir /opt/$FQDN/meshcentral-data
-sudo mkdir /opt/$FQDN/meshcentral-data/letsencrypt
-sudo chmod 755 –R /opt/$FQDN/meshcentral-data/letsencrypt
 
 # Bước 9 (tuỳ chọn: chỉ dùng cho vá lỗi nâng cấp phiên bản mới cho MESHCENTRAL)
 #Updating MeshCentral
