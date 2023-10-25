@@ -40,7 +40,6 @@ else
 # 7.    Run MeshCentral
 # 8.    Open required ports in the firewall
 #===============================================================================
-
 #Bước 3. Installing NodeJS
 #The first prerequisite is to ensure NodeJS is installed on the system. We will install the node version manager, activate it, then install #an LTS version of NodeJS.
 sudo apt update -y
@@ -50,87 +49,39 @@ sudo apt install nodejs -y
 sudo apt install npm -y
 
 # Bước 4. Check version và tình trạng hoạt động môi trường Node.js,  NPM và Node Server:
-#Now we install nvm (Node Version Manager) - nvm makes keeping NodeJS up to date very simple. It also allows you to run multiple versions #of Nodejs side by side, or to roll back in case there are issues with a new version. If you are installing MeshCentral on Ubuntu 18.04, #the version of NodeJS included is very out of date, and does not meet the minimum requirements for MeshCentral. So getting nvm going first #will avoid a lot of headaches in the future. 
-#wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-#You can either close out of your session, then reconnect to start using nvm, or if you are in a hurry, run the commands below to add nvm #to the system path, and add nvm to bash completion: 
-#export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-# and now to manually load nvm: 
-#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-# Let's take a look and see what versions of Nodejs are currently available via nvm: 
-#nvm ls-remote
-
-#Looking at the list above, we will install the most recent LTS version: v18.18.2 
-#nvm install v18.18.2
-
-# Since nvm allows for multiple versions of Nodejs to be installed side by side, we are going to go ahead and tell it to use the version we just installed as the default: 
-#nvm alias default v18.18.2
-
-#nvm use default
-#Now using node v18.18.2 (npm v10.2.1)
-
-#Now we will update npm
-#npm install npm@latest -g
-#nvm install node
-#v21.1.0 is already installed.
-#Now using node v21.1.0 (npm v10.2.0)
-
-#nvm use node
-# Now using node v21.1.0 (npm v10.2.0)
 node -v
 # v21.1.0
 
 npm -v
 #10.2.0
 
-
-# Installing MongoDB  (tuỳ chọn: phục vụ mô hình MESHCENTRAL Scale-out Larger > 100.000 Remote client)
-sudo apt install mongodb -y
-sudo systemctl start mongodb
-sudo systemctl enable mongodb
-
-#mongo --host 127.0.0.1:27017
-
-# Then exit the Mongo shell by pressing CTRL-C.
-# The database and log files will be created in these locations. This info is useful for making backups of the database.
-# /var/log/mongodb
-# /var/lib/mongo
-
 # Port Permission on Linux, as a Security feature, ports below 1024 port number are reserved for processes running as "root" user.
 whereis node
-# node: /root/.nvm/versions/node/v21.1.0/bin/node
 # node: /usr/bin/node 
-
 sudo setcap cap_net_bind_service=+ep /usr/bin/node
-
-
 
 # Bước 5. Thiết lập thư mục và cấu hình quyền truy cập thư mục để Download MESHCENTRAL
 #node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
 # In this case, the result shows NodeJS binaries are found at /usr/bin/node. We will this path in the next command, which will allow NodeJS #to utilize ports below 1024. Note that these permissions may sometimes be lost when updating the Linux Kernel and the command may need to #be run again. 1)
 # Now for our improved security installation, we are going to start by creating a new user called $mcadmin:
- 
-sudo useradd -r -d /opt/$FQDN -s /sbin/nologin $mcadmin
-
-mkdir /opt/$FQDN
-cd /opt/$FQDN
 
 npm install meshcentral
-sudo -u $mcadmin node ./node_modules/meshcentral
-#node ./node_modules/meshcentral
+
+node ./node_modules/meshcentral
 
 # Bước 6. Cấu hình Dịch vụ cho MESHCENTRAL Service tự động chạy theo OS boot:
 #Automatically Starting the Server
-# whereis node
-#  Node is usually installed at /usr/bin/node but if your check above shows a different path, make note of it and enter it into the appropriate place in the file we are about to create.
 # We will need all of this information to create the description file for the $FQDN service we create. To create this description file, enter: 
+mkdir /home/$mcadmin/$FQDN
+mkdir /home/$mcadmin/$FQDN/meshcentralWD
 
 echo '[Unit]' >>  /etc/systemd/system/$FQDN.service
 echo 'Description='${FQDN}' Server' >> /etc/systemd/system/$FQDN.service
 echo '[Service]'  >>  /etc/systemd/system/$FQDN.service
 echo 'Type=simple'  >>  /etc/systemd/system/$FQDN.service
 echo 'LimitNOFILE=1000000'  >>  /etc/systemd/system/$FQDN.service
-echo 'ExecStart=/usr/bin/node /opt/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
-echo 'WorkingDirectory=/opt/'${FQDN}''  >>  /etc/systemd/system/$FQDN.service
+echo 'ExecStart=/usr/bin/node /home/'${mcadmin}'/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
+echo 'WorkingDirectory=/home/'${mcadmin}'/'${FQDN}'/meshcentralWD'  >>  /etc/systemd/system/$FQDN.service
 echo 'Environment=NODE_ENV=production'  >>  /etc/systemd/system/$FQDN.service
 echo 'User='${mcadmin}''  >>  /etc/systemd/system/$FQDN.service
 echo 'Group='${mcgroup}''  >>  /etc/systemd/system/$FQDN.service
@@ -144,78 +95,58 @@ echo 'WantedBy=multi-user.target'  >>  /etc/systemd/system/$FQDN.service
 
 #Be sure to double check the path to NodeJS in the ExecStart line.
 #Once we have this file created we can now enable, start, stop and disable MeshCentral:
-#sudo systemctl disable $FQDN.service
 sudo systemctl enable $FQDN.service
-#sudo systemctl stop $FQDN.service
 sudo systemctl start $FQDN.service
-sudo systemctl status $FQDN.service
 
-# Bước 7 Locking Things Down
-# Now we are going to change ownership of the /opt/meshcentral directory and make it read only:
-
-chown -R $mcadmin:$mcadmin /opt/$FQDN
-
-# MeshCentral allows users to upload and download files stored on the server. These are all stored in the meshcentral-files directory. 
-# Since we still want this to work, we need to adjust the permissions on this directory to allow the server to write to it:
-mkdir /opt/$FQDN/meshcentral-files
-chmod 755 /opt/$FQDN/meshcentral-files
-chmod 755 /opt/$FQDN/meshcentral-*
-
-#If you will be using the built in Let's Encrypt support for your MeshCentral instance, we will also need to adjust permissions on the #letsencrypt directory to allow those periodic updates to work properly:
-
-mkdir /opt/$FQDN/meshcentral-data
-mkdir /opt/$FQDN/meshcentral-data/letsencrypt
-chmod 755 /opt/$FQDN/meshcentral-data/letsencrypt
-
-
-
-# Bước 8 (tuỳ chọn: dùng cài MONGODB làm Server nhúng CSDL quản lý MESHCENTRAL Address Book)
-# By default, MeshCentral uses NeDB with a database file stored at ~/meshcentral-data/meshcentral.db. While this is great for small servers #managing up to around 100 systems, as we indicated earlier, this directory will become read-only in our improved security configuration, #so now it is time to tell MeshCentral to use MongoDB instead.
-
-#The majority of the configuration options for MeshCentral are stored in a file called config.json, stored in the ~/meshcentral-data #directory. We will edit it now to start using MongoDB. We start by opening the file in a text editor: 
+# Bước 7 (tuỳ chọn: dùng cài MONGODB làm Server nhúng CSDL quản lý MESHCENTRAL Address Book)
+# By default, MeshCentral uses NeDB with a database file stored at ~/meshcentral-data/meshcentral.db. 
+#While this is great for small servers #managing up to around 100 systems, as we indicated earlier, 
+#this directory will become read-only in our improved security configuration, #so now it is time to tell MeshCentral to use MongoDB instead.
+#The majority of the configuration options for MeshCentral are stored in a file called config.json, stored in the ~/meshcentral-data #directory. 
+#We will edit it now to start using MongoDB. We start by opening the file in a text editor: 
 #Inside the text editor, we need to make the top section of the file look like this:
 
-echo '{' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  "$schema": "https://raw.githubusercontent.com/Ylianst/MeshCentral/master/meshcentral-config-schema.json",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  "__comment1__": "This is a simple configuration file.",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  "__comment2__": "See node_modules/meshcentral/sample-config-advanced.json.",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  "settings": {' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_cert": "myserver.mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "WANonly": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "LANonly": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_sessionKey": "MyReallySecretPassword1",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "port": 443,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "aliasPort": 443,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "redirPort": 80,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "redirAliasPort": 80' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  "domains": {' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "": {' >> /opt/$FQDN/meshcentral-data/config.json
-echo '      "_title": "MyServer",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '      "_title2": "Servername",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '      "_minify": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '      "_newAccounts": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '      "_userNameIsEmail": true' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    }' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  "_letsencrypt": {' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "email": "myemail@mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "names": "myserver.mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "skipChallengeVerification": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "production": false' >> /opt/$FQDN/meshcentral-data/config.json
-echo '  }' >> /opt/$FQDN/meshcentral-data/config.json
-echo '}' >> /opt/$FQDN/meshcentral-data/config.json
+echo '{' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  "$schema": "https://raw.githubusercontent.com/Ylianst/MeshCentral/master/meshcentral-config-schema.json",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  "__comment1__": "This is a simple configuration file.",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  "__comment2__": "See node_modules/meshcentral/sample-config-advanced.json.",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  "settings": {' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "_cert": "myserver.mydomain.com",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "WANonly": true,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "LANonly": true,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "_sessionKey": "MyReallySecretPassword1",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "port": 443,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "aliasPort": 443,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "redirPort": 80,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "redirAliasPort": 80' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  },' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  "domains": {' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "": {' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '      "_title": "MyServer",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '      "_title2": "Servername",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '      "_minify": true,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '      "_newAccounts": true,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '      "_userNameIsEmail": true' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    }' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  },' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  "_letsencrypt": {' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "email": "myemail@mydomain.com",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "names": "myserver.mydomain.com",' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "skipChallengeVerification": true,' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '    "production": false' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '  }' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
+echo '}' >> /home/$mcadmin/$FQDN/meshcentral-data/config.json
 
 # Bước 9 (tuỳ chọn: chỉ dùng cho vá lỗi nâng cấp phiên bản mới cho MESHCENTRAL)
 #Updating MeshCentral
 #As mentioned, with this improved security installation, the automated updates and updates initiated from the web portal will fail. To #update MeshCentral, you will need to log into the server over SSH and run the following commands:
 
-#cd /opt/$FQDN
+#cd /home/$mcadmin/$FQDN
 #sudo systemctl stop $FQDN.service
 #sudo npm install meshcentral
 #sudo -u $mcadmin node ./node_modules/meshcentral
-#sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
-#sudo chmod 755 -R /opt/$FQDN/meshcentral-files
+#sudo chown -R $mcadmin:$mcadmin /home/$mcadmin/$FQDN
+#sudo chmod 755 -R /home/$mcadmin/$FQDN/meshcentral-files
 #sudo systemctl start $FQDN.service
 
 fi
