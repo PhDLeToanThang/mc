@@ -85,7 +85,7 @@ whereis node
 # node: /root/.nvm/versions/node/v21.1.0/bin/node
 # node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
 
-sudo setcap cap_net_bind_service=+ep /usr/bin/node
+sudo setcap cap_net_bind_service=+ep /root/.nvm/versions/node/v21.1.0/bin/node
 
 
 # Installing MongoDB  (tuỳ chọn: phục vụ mô hình MESHCENTRAL Scale-out Larger > 100.000 Remote client)
@@ -188,12 +188,12 @@ echo '}' >> /opt/$FQDN/meshcentral-data/config.json
 #Updating MeshCentral
 #As mentioned, with this improved security installation, the automated updates and updates initiated from the web portal will fail. To #update MeshCentral, you will need to log into the server over SSH and run the following commands:
 
-cd /opt/$FQDN
-sudo systemctl stop $FQDN.service
-sudo npm install meshcentral
-sudo -u $mcadmin node ./node_modules/meshcentral
-sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
-sudo chmod 755 -R /opt/$FQDN/meshcentral-files
+#cd /opt/$FQDN
+#sudo systemctl stop $FQDN.service
+#sudo npm install meshcentral
+#sudo -u $mcadmin node ./node_modules/meshcentral
+#sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
+#sudo chmod 755 -R /opt/$FQDN/meshcentral-files
 sudo systemctl start $FQDN.service
 
 fi
