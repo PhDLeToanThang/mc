@@ -123,7 +123,7 @@ echo 'Description='${FQDN}' Server' >> /etc/systemd/system/$FQDN.service
 echo '[Service]'  >>  /etc/systemd/system/$FQDN.service
 echo 'Type=simple'  >>  /etc/systemd/system/$FQDN.service
 echo 'LimitNOFILE=1000000'  >>  /etc/systemd/system/$FQDN.service
-echo 'ExecStart=/usr/bin/node /opt/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
+echo 'ExecStart=/root/.nvm/versions/node/v21.1.0/bin/node /opt/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
 echo 'WorkingDirectory=/opt/'${FQDN}''  >>  /etc/systemd/system/$FQDN.service
 echo 'Environment=NODE_ENV=production'  >>  /etc/systemd/system/$FQDN.service
 echo 'User='${mcadmin}''  >>  /etc/systemd/system/$FQDN.service
@@ -147,19 +147,19 @@ sudo systemctl start $FQDN.service
 # Bước 7 Locking Things Down
 # Now we are going to change ownership of the /opt/meshcentral directory and make it read only:
 
-sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
+chown -R $mcadmin:$mcadmin /opt/$FQDN
 
 # MeshCentral allows users to upload and download files stored on the server. These are all stored in the meshcentral-files directory. 
 # Since we still want this to work, we need to adjust the permissions on this directory to allow the server to write to it:
-sudo mkdir /opt/$FQDN/meshcentral-files
-sudo chmod 755 –R /opt/$FQDN/meshcentral-files
-sudo chmod 755 –R /opt/$FQDN/meshcentral-*
+mkdir /opt/$FQDN/meshcentral-files
+chmod 755 /opt/$FQDN/meshcentral-files
+chmod 755 /opt/$FQDN/meshcentral-*
 
 #If you will be using the built in Let's Encrypt support for your MeshCentral instance, we will also need to adjust permissions on the #letsencrypt directory to allow those periodic updates to work properly:
 
-sudo mkdir /opt/$FQDN/meshcentral-data
-sudo mkdir /opt/$FQDN/meshcentral-data/letsencrypt
-sudo chmod 755 –R /opt/$FQDN/meshcentral-data/letsencrypt
+mkdir /opt/$FQDN/meshcentral-data
+mkdir /opt/$FQDN/meshcentral-data/letsencrypt
+chmod 755 /opt/$FQDN/meshcentral-data/letsencrypt
 
 
 
@@ -194,6 +194,6 @@ echo '}' >> /opt/$FQDN/meshcentral-data/config.json
 #sudo -u $mcadmin node ./node_modules/meshcentral
 #sudo chown -R $mcadmin:$mcadmin /opt/$FQDN
 #sudo chmod 755 -R /opt/$FQDN/meshcentral-files
-sudo systemctl start $FQDN.service
+#sudo systemctl start $FQDN.service
 
 fi
