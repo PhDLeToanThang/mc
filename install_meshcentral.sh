@@ -43,49 +43,44 @@ else
 
 #Bước 3. Installing NodeJS
 #The first prerequisite is to ensure NodeJS is installed on the system. We will install the node version manager, activate it, then install #an LTS version of NodeJS.
-
-sudo add-apt-repository universe -y
 sudo apt update -y
+sudo add-apt-repository universe -y
 sudo apt install nano -y
+sudo apt install nodejs -y
+sudo apt install npm -y
 
 # Bước 4. Check version và tình trạng hoạt động môi trường Node.js,  NPM và Node Server:
 #Now we install nvm (Node Version Manager) - nvm makes keeping NodeJS up to date very simple. It also allows you to run multiple versions #of Nodejs side by side, or to roll back in case there are issues with a new version. If you are installing MeshCentral on Ubuntu 18.04, #the version of NodeJS included is very out of date, and does not meet the minimum requirements for MeshCentral. So getting nvm going first #will avoid a lot of headaches in the future. 
-wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+#wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 #You can either close out of your session, then reconnect to start using nvm, or if you are in a hurry, run the commands below to add nvm #to the system path, and add nvm to bash completion: 
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+#export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 # and now to manually load nvm: 
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 # Let's take a look and see what versions of Nodejs are currently available via nvm: 
-nvm ls-remote
+#nvm ls-remote
 
 #Looking at the list above, we will install the most recent LTS version: v18.18.2 
-nvm install v18.18.2
+#nvm install v18.18.2
 
 # Since nvm allows for multiple versions of Nodejs to be installed side by side, we are going to go ahead and tell it to use the version we just installed as the default: 
-nvm alias default v18.18.2
+#nvm alias default v18.18.2
 
 #nvm use default
 #Now using node v18.18.2 (npm v10.2.1)
 
 #Now we will update npm
-npm install npm@latest -g
-nvm install node
+#npm install npm@latest -g
+#nvm install node
 #v21.1.0 is already installed.
 #Now using node v21.1.0 (npm v10.2.0)
 
-nvm use node
+#nvm use node
 # Now using node v21.1.0 (npm v10.2.0)
 node -v
 # v21.1.0
 
 npm -v
 #10.2.0
-
-whereis node
-# node: /root/.nvm/versions/node/v21.1.0/bin/node
-# node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
-
-sudo setcap cap_net_bind_service=+ep /root/.nvm/versions/node/v21.1.0/bin/node
 
 
 # Installing MongoDB  (tuỳ chọn: phục vụ mô hình MESHCENTRAL Scale-out Larger > 100.000 Remote client)
@@ -100,6 +95,15 @@ sudo systemctl enable mongodb
 # /var/log/mongodb
 # /var/lib/mongo
 
+# Port Permission on Linux, as a Security feature, ports below 1024 port number are reserved for processes running as "root" user.
+whereis node
+# node: /root/.nvm/versions/node/v21.1.0/bin/node
+# node: /usr/bin/node 
+
+sudo setcap cap_net_bind_service=+ep /usr/bin/node
+
+
+
 # Bước 5. Thiết lập thư mục và cấu hình quyền truy cập thư mục để Download MESHCENTRAL
 #node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
 # In this case, the result shows NodeJS binaries are found at /usr/bin/node. We will this path in the next command, which will allow NodeJS #to utilize ports below 1024. Note that these permissions may sometimes be lost when updating the Linux Kernel and the command may need to #be run again. 1)
@@ -107,10 +111,12 @@ sudo systemctl enable mongodb
  
 sudo useradd -r -d /opt/$FQDN -s /sbin/nologin $mcadmin
 
-sudo mkdir /opt/$FQDN
+mkdir /opt/$FQDN
 cd /opt/$FQDN
-sudo npm install meshcentral
-sudo -u $mcadmin node ./node_modules/meshcentral
+
+npm install meshcentral
+-u $mcadmin node ./node_modules/meshcentral
+#node ./node_modules/meshcentral
 
 # Bước 6. Cấu hình Dịch vụ cho MESHCENTRAL Service tự động chạy theo OS boot:
 #Automatically Starting the Server
@@ -123,7 +129,7 @@ echo 'Description='${FQDN}' Server' >> /etc/systemd/system/$FQDN.service
 echo '[Service]'  >>  /etc/systemd/system/$FQDN.service
 echo 'Type=simple'  >>  /etc/systemd/system/$FQDN.service
 echo 'LimitNOFILE=1000000'  >>  /etc/systemd/system/$FQDN.service
-echo 'ExecStart=/root/.nvm/versions/node/v21.1.0/bin/node /opt/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
+echo 'ExecStart=/usr/bin/node /opt/'${FQDN}'/node_modules/meshcentral'  >>  /etc/systemd/system/$FQDN.service
 echo 'WorkingDirectory=/opt/'${FQDN}''  >>  /etc/systemd/system/$FQDN.service
 echo 'Environment=NODE_ENV=production'  >>  /etc/systemd/system/$FQDN.service
 echo 'User='${mcadmin}''  >>  /etc/systemd/system/$FQDN.service
@@ -138,11 +144,11 @@ echo 'WantedBy=multi-user.target'  >>  /etc/systemd/system/$FQDN.service
 
 #Be sure to double check the path to NodeJS in the ExecStart line.
 #Once we have this file created we can now enable, start, stop and disable MeshCentral:
-sudo systemctl disable $FQDN.service
+#sudo systemctl disable $FQDN.service
 sudo systemctl enable $FQDN.service
-sudo systemctl stop $FQDN.service
+#sudo systemctl stop $FQDN.service
 sudo systemctl start $FQDN.service
-
+sudo systemctl status $FQDN.service
 
 # Bước 7 Locking Things Down
 # Now we are going to change ownership of the /opt/meshcentral directory and make it read only:
