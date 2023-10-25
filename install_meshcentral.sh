@@ -46,19 +46,36 @@ else
 
 sudo add-apt-repository universe -y
 sudo apt update -y
-sudo apt install nodejs -y
-sudo apt install npm -y
 sudo apt install nano -y
 
 # Bước 4. Check version và tình trạng hoạt động môi trường Node.js,  NPM và Node Server:
 #Now we install nvm (Node Version Manager) - nvm makes keeping NodeJS up to date very simple. It also allows you to run multiple versions #of Nodejs side by side, or to roll back in case there are issues with a new version. If you are installing MeshCentral on Ubuntu 18.04, #the version of NodeJS included is very out of date, and does not meet the minimum requirements for MeshCentral. So getting nvm going first #will avoid a lot of headaches in the future. 
-#wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 #You can either close out of your session, then reconnect to start using nvm, or if you are in a hurry, run the commands below to add nvm #to the system path, and add nvm to bash completion: 
-#export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 # and now to manually load nvm: 
-#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 # Let's take a look and see what versions of Nodejs are currently available via nvm: 
-#nvm ls-remote
+nvm ls-remote
+
+#Looking at the list above, we will install the most recent LTS version: v18.18.2 
+nvm install v18.18.2
+
+# Since nvm allows for multiple versions of Nodejs to be installed side by side, we are going to go ahead and tell it to use the version we just installed as the default: 
+nvm alias default v18.18.2
+
+#Now we will update npm
+npm install npm@latest -g
+
+nodejs -v
+#v10.19.0
+npm -v
+#10.2.1
+whereis node
+# node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
+
+sudo setcap cap_net_bind_service=+ep /usr/bin/node
+
 
 # Installing MongoDB  (tuỳ chọn: phục vụ mô hình MESHCENTRAL Scale-out Larger > 100.000 Remote client)
 sudo apt install mongodb -y
@@ -71,15 +88,6 @@ sudo systemctl enable mongodb
 # The database and log files will be created in these locations. This info is useful for making backups of the database.
 # /var/log/mongodb
 # /var/lib/mongo
-
-node -v
-#v10.19.0
-npm -v
-#6.14.4
-whereis node
-# node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
-
-sudo setcap cap_net_bind_service=+ep /usr/bin/node
 
 # Bước 5. Thiết lập thư mục và cấu hình quyền truy cập thư mục để Download MESHCENTRAL
 #node: /usr/bin/node /usr/include/node /usr/share/man/man1/node.1.gz
