@@ -115,7 +115,7 @@ mkdir /opt/$FQDN
 cd /opt/$FQDN
 
 npm install meshcentral
--u $mcadmin node ./node_modules/meshcentral
+sudo -u $mcadmin node ./node_modules/meshcentral
 #node ./node_modules/meshcentral
 
 # Bước 6. Cấu hình Dịch vụ cho MESHCENTRAL Service tự động chạy theo OS boot:
@@ -176,19 +176,36 @@ chmod 755 /opt/$FQDN/meshcentral-data/letsencrypt
 #Inside the text editor, we need to make the top section of the file look like this:
 
 echo '{' >> /opt/$FQDN/meshcentral-data/config.json
-echo '	"settings": {' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "MongoDb": "mongodb://127.0.0.1:27017/meshcentral",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  "$schema": "https://raw.githubusercontent.com/Ylianst/MeshCentral/master/meshcentral-config-schema.json",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  "__comment1__": "This is a simple configuration file.",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  "__comment2__": "See node_modules/meshcentral/sample-config-advanced.json.",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  "settings": {' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "_cert": "myserver.mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
 echo '    "WANonly": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_Port": 443,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_RedirPort": 80,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_AllowLoginToken": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_AllowFraming": true,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_WebRTC": false,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_ClickOnce": false,' >> /opt/$FQDN/meshcentral-data/config.json
-echo '    "_UserAllowedIP" : "127.0.0.1,::1,'${etherip4}'"' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "LANonly": true,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "_sessionKey": "MyReallySecretPassword1",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "port": 443,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "aliasPort": 443,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "redirPort": 80,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "redirAliasPort": 80' >> /opt/$FQDN/meshcentral-data/config.json
 echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  "domains": {' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "": {' >> /opt/$FQDN/meshcentral-data/config.json
+echo '      "_title": "MyServer",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '      "_title2": "Servername",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '      "_minify": true,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '      "_newAccounts": true,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '      "_userNameIsEmail": true' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    }' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  },' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  "_letsencrypt": {' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "__comment__": "Requires NodeJS 8.x or better, Go to https://letsdebug.net/ first before trying Let's Encrypt.",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "email": "myemail@mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "names": "myserver.mydomain.com",' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "skipChallengeVerification": true,' >> /opt/$FQDN/meshcentral-data/config.json
+echo '    "production": false' >> /opt/$FQDN/meshcentral-data/config.json
+echo '  }' >> /opt/$FQDN/meshcentral-data/config.json
 echo '}' >> /opt/$FQDN/meshcentral-data/config.json
-
 
 # Bước 9 (tuỳ chọn: chỉ dùng cho vá lỗi nâng cấp phiên bản mới cho MESHCENTRAL)
 #Updating MeshCentral
